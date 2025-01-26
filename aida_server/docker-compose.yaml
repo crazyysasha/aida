@@ -1,0 +1,59 @@
+services:
+  # Development services
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      
+  postgres:
+    image: postgres:16.3
+    ports:
+      - '8090:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: aida
+      POSTGRES_PASSWORD: "UweULCRTJomxoaKbqJr541Ri_EmTmaH_"
+    volumes:
+      - aida_data:/var/lib/postgresql/data
+    profiles:
+      - '' # Default profile
+      - dev
+  redis:
+    image: redis:6.2.6
+    ports:
+      - '8091:6379'
+    command: redis-server --requirepass "2tmrsjUsRP--qH2UKanUHTOXg-2D1Xha"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    profiles:
+      - '' # Default profile
+      - dev
+
+  # Test services
+  postgres_test:
+    image: postgres:16.3
+    ports:
+      - '9090:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: aida_test
+      POSTGRES_PASSWORD: "2C_96FaQC7OdgbYTmZwqy94x-INQn0KK"
+    volumes:
+      - aida_test_data:/var/lib/postgresql/data
+    profiles:
+      - '' # Default profile
+      - test
+  redis_test:
+    image: redis:6.2.6
+    ports:
+      - '9091:6379'
+    command: redis-server --requirepass "L19b1BvG67MPPxk66eyYLDF_k0zyfhci"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    profiles:
+      - '' # Default profile
+      - test
+
+volumes:
+  aida_data:
+  aida_test_data:
