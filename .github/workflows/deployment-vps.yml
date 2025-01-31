@@ -105,7 +105,7 @@ jobs:
               unzip ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
               rm ${{env.project}}_${{env.target}}.zip
               cd ${{env.project}}_${{env.target}}
-              mv ${{env.project}}_server/ ./
-              docker compose --build --detach
+              mv -f ${{env.project}}_server/ ./
+              docker compose up --build --detach
               exit
               
