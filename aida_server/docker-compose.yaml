@@ -5,18 +5,18 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '${API_SERVER_PUBLIC_PORT:-28080}:8080'
-      - '${INSIGHTS_SERVER_PUBLIC_PORT:-28081}:8081'
-      - '${WEB_SERVER_PUBLIC_PORT:-28082}:8082'
+      - '${API_SERVER_PUBLIC_PORT:-8080}:8080'
+      - '${INSIGHTS_SERVER_PUBLIC_PORT:-8081}:8081'
+      - '${WEB_SERVER_PUBLIC_PORT:-8082}:8082'
     networks:
       - web
   postgres:
     image: postgres:16.3
     ports:
-      - '${DATABASE_PORT:-28090}:5432'
+      - '${DATABASE_PORT:-8090}:5432'
     environment:
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_DB: ${DATABASE_NAME:-aida}
+      POSTGRES_DB: ${DATABASE_NAME:-serverpod}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-UweULCRTJomxoaKbqJr541Ri_EmTmaH_}
     volumes:
       - aida_data:/var/lib/postgresql/data
