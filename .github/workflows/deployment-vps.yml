@@ -58,43 +58,41 @@ jobs:
         
         - name: Create .env configuration file
           run: |
-            echo "TARGET=${{env.target}}" >> .env
+            
+            echo "TARGET=${{env.target}}" >> ./${{env.project}}_server/.env
             if [[ ${{env.target}} == 'production' ]]; then
-              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.production.database }}" >> .env
+              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.production.database }}" >> ./${{env.project}}_server/.env
             else 
-              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.staging.database }}" >> .env
+              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.staging.database }}" >> ./${{env.project}}_server/.env
             fi
 
-            echo "DATABASE_HOST=${{ steps.read_config.outputs.data.database.host }}" >> .env
-            echo "DATABASE_PORT=${{ steps.read_config.outputs.data.database.port }}" >> .env
-            echo "DATABASE_NAME=${{ steps.read_config.outputs.data.database.name }}" >> .env
-            echo "DATABASE_USER=${{ steps.read_config.outputs.data.database.user }}" >> .env
+            echo "DATABASE_HOST=${{ steps.read_config.outputs.data.database.host }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_PORT=${{ steps.read_config.outputs.data.database.port }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_NAME=${{ steps.read_config.outputs.data.database.name }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_USER=${{ steps.read_config.outputs.data.database.user }}" >> ./${{env.project}}_server/.env
             
-            echo "API_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.apiServer.publicHost }}" >> .env
-            echo "API_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.apiServer.publicPort }}" >> .env
+            echo "API_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.apiServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.apiServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.insightsServer.publicHost }}" >> .env
-            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.insightsServer.publicPort }}" >> .env
+            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "WEB_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.webServer.publicHost }}" >> .env
-            echo "WEB_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.webServer.publicPort }}" >> .env
+            echo "WEB_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.webServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.webServer.publicPort }}" >> ./${{env.project}}_server/.env
         
-        - name: Build Docker images
-          run: |
-            docker-compose -f docker-compose.yaml build
-    
-        - name: Save Docker images as tar
-          run: |
-            docker save -o aida_images.tar $(docker-compose -f docker-compose.yaml config | awk '/image:/ {print $2}')
-    
+        - name: create zip file 
+          uses: montudor/action-zip@v1
+          with:
+            args: zip -qq -r ${{env.project}}_server.zip ${{env.project}}_server
+          
         - name: Send Docker images to VPS
           uses: appleboy/scp-action@master
           with:
             host: ${{ secrets.VPS_HOST }}
             username: ${{ secrets.VPS_USERNAME }}
             password: ${{ secrets.VPS_PASSWORD }}
-            source: "aida_images.tar, .env, docker-compose.yaml"
-            target: "/home/${{ secrets.VPS_USERNAME }}/aida"
+            source: "${{env.project}}_server.zip"
+            target: "/home/${{ secrets.VPS_USERNAME }}/"
     
         - name: Load and Restart Docker containers on VPS
           uses: appleboy/ssh-action@master
@@ -103,7 +101,9 @@ jobs:
             username: ${{ secrets.VPS_USERNAME }}
             password: ${{ secrets.VPS_PASSWORD }}
             script: |
-              cd /home/${{ secrets.VPS_USERNAME }}/aida
-              docker load -i aida_images.tar
-              docker-compose down
-              docker-compose up -d
+              cd /home/${{ secrets.VPS_USERNAME }}/
+              unzip ${{env.project}}_server.zip -d ${{env.project}}_server
+              rm ${{env.project}}_server.zip
+              cd ${{env.project}}_server
+              docker compose --build --detach
+              
