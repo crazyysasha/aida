@@ -2,8 +2,7 @@ services:
   # Development services
   app:
     environment:
-      - TARGET=${TARGET:-development}
-
+      - runmode=${TARGET:-production}
     build:
       context: .
       dockerfile: Dockerfile
