@@ -61,24 +61,24 @@ jobs:
             
             echo "TARGET=${{env.target}}" >> ./${{env.project}}_server/.env
             if [[ ${{env.target}} == 'production' ]]; then
-              echo "DATABASE_PASSWORD=${{ toJson(steps.read_passwords.outputs.data).production.database }}" >> ./${{env.project}}_server/.env
+              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).production.database }}" >> ./${{env.project}}_server/.env
             else 
-              echo "DATABASE_PASSWORD=${{ toJson(steps.read_passwords.outputs.data).staging.database }}" >> ./${{env.project}}_server/.env
+              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).staging.database }}" >> ./${{env.project}}_server/.env
             fi
 
-            echo "DATABASE_HOST=${{ toJson(steps.read_config.outputs.data).database.host }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_PORT=${{ toJson(steps.read_config.outputs.data).database.port }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_NAME=${{ toJson(steps.read_config.outputs.data).database.name }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_USER=${{ toJson(steps.read_config.outputs.data).database.user }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_HOST=${{ fromJson(steps.read_config.outputs.data).database.host }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_PORT=${{ fromJson(steps.read_config.outputs.data).database.port }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_NAME=${{ fromJson(steps.read_config.outputs.data).database.name }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_USER=${{ fromJson(steps.read_config.outputs.data).database.user }}" >> ./${{env.project}}_server/.env
             
-            echo "API_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).apiServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "API_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).apiServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).apiServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).apiServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "WEB_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).webServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "WEB_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).webServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).webServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).webServer.publicPort }}" >> ./${{env.project}}_server/.env
         
         - name: create zip file 
           uses: montudor/action-zip@v1
@@ -105,6 +105,7 @@ jobs:
               unzip ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
               rm ${{env.project}}_${{env.target}}.zip
               cd ${{env.project}}_${{env.target}}
+              mv ${{env.project}}_server/ ./
               docker compose --build --detach
               exit
               
