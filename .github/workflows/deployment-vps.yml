@@ -107,9 +107,9 @@ jobs:
               rm ${{ env.project }}_${{ env.target }}.zip
               cd ${{ env.project }}_${{ env.target }}
               rsync -a --delete --include=".*" ${{ env.project }}_server/ ./
-              rm -rf ${{ env.project }}_server
               exit
-
+              
+        # rm -rf ${{ env.project }}_server
         # - name: Send .env ${{env.target}} configuration to VPS
         #   uses: appleboy/scp-action@master
         #   with:
