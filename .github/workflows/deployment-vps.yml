@@ -83,7 +83,7 @@ jobs:
         - name: create zip file 
           uses: montudor/action-zip@v1
           with:
-            args: zip -qq -r ${{ env.project }}_${{ env.target }}.zip ${{ env.project }}_server/ .*
+            args: cd ${{ env.project }}_server; zip -qq -r ../${{ env.project }}_${{ env.target }}.zip . .*
           
         - name: Send zip file to VPS
           uses: appleboy/scp-action@master
@@ -106,7 +106,6 @@ jobs:
               unzip -o ${{ env.project }}_${{ env.target }}.zip -d ${{ env.project }}_${{ env.target }}
               rm ${{ env.project }}_${{ env.target }}.zip
               cd ${{ env.project }}_${{ env.target }}
-              rsync -a --delete --include=".*" ${{ env.project }}_server/ ./
               exit
               
         # rm -rf ${{ env.project }}_server
