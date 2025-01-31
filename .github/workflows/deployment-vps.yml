@@ -106,7 +106,7 @@ jobs:
               unzip -o ${{ env.project }}_${{ env.target }}.zip -d ${{ env.project }}_${{ env.target }}
               rm ${{ env.project }}_${{ env.target }}.zip
               cd ${{ env.project }}_${{ env.target }}
-              rsync -a --delete ${{ env.project }}_server/ ./
+              rsync -a --delete --include=".*" ${{ env.project }}_server/ ./
               rm -rf ${{ env.project }}_server
               exit
 
