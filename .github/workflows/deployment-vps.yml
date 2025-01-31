@@ -14,7 +14,7 @@ on:
           - 'production'
 env:
   project: "aida" # Update with your project name
-  target: ${{ github.event.inputs.target  }}
+  target: ${{ github.event.inputs.target || 'staging' }}
 jobs:
   deploy:
     name: Deploy
@@ -50,7 +50,7 @@ jobs:
           with:
             from-file: './${{ env.project }}_server/config/passwords.yaml'
 
-        - name: Read ${{env.target}} configuration
+        - name: Read ${{ env.target }} configuration
           id: read_config
           uses: teunmooij/yaml@v1
           with:
@@ -59,31 +59,31 @@ jobs:
         - name: Create .env configuration file
           run: |
             
-            echo "TARGET=${{env.target}}" >> ./${{env.project}}_server/.env
-            if [[ ${{env.target}} == 'production' ]]; then
-              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).production.database }}" >> ./${{env.project}}_server/.env
+            echo "TARGET=${{ env.target }}" >> ./${{ env.project }}_server/.env
+            if [[ ${{ env.target }} == 'production' ]]; then
+              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).production.database }}" >> ./${{ env.project }}_server/.env
             else 
-              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).staging.database }}" >> ./${{env.project}}_server/.env
+              echo "DATABASE_PASSWORD=${{ fromJson(steps.read_passwords.outputs.data).staging.database }}" >> ./${{ env.project }}_server/.env
             fi
 
-            echo "DATABASE_HOST=${{ fromJson(steps.read_config.outputs.data).database.host }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_PORT=${{ fromJson(steps.read_config.outputs.data).database.port }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_NAME=${{ fromJson(steps.read_config.outputs.data).database.name }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_USER=${{ fromJson(steps.read_config.outputs.data).database.user }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_HOST=${{ fromJson(steps.read_config.outputs.data).database.host }}" >> ./${{ env.project }}_server/.env
+            echo "DATABASE_PORT=${{ fromJson(steps.read_config.outputs.data).database.port }}" >> ./${{ env.project }}_server/.env
+            echo "DATABASE_NAME=${{ fromJson(steps.read_config.outputs.data).database.name }}" >> ./${{ env.project }}_server/.env
+            echo "DATABASE_USER=${{ fromJson(steps.read_config.outputs.data).database.user }}" >> ./${{ env.project }}_server/.env
             
-            echo "API_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).apiServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "API_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).apiServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).apiServer.publicHost }}" >> ./${{ env.project }}_server/.env
+            echo "API_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).apiServer.publicPort }}" >> ./${{ env.project }}_server/.env
 
-            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicHost }}" >> ./${{ env.project }}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).insightsServer.publicPort }}" >> ./${{ env.project }}_server/.env
 
-            echo "WEB_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).webServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "WEB_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).webServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_HOST=${{ fromJson(steps.read_config.outputs.data).webServer.publicHost }}" >> ./${{ env.project }}_server/.env
+            echo "WEB_SERVER_PUBLIC_PORT=${{ fromJson(steps.read_config.outputs.data).webServer.publicPort }}" >> ./${{ env.project }}_server/.env
         
         - name: create zip file 
           uses: montudor/action-zip@v1
           with:
-            args: zip -qq -r ${{env.project}}_${{env.target}}.zip ${{env.project}}_server/ .*
+            args: zip -qq -r ${{ env.project }}_${{ env.target }}.zip ${{ env.project }}_server/ .*
           
         - name: Send zip file to VPS
           uses: appleboy/scp-action@master
@@ -91,7 +91,7 @@ jobs:
             host: ${{ secrets.VPS_HOST }}
             username: ${{ secrets.VPS_USERNAME }}
             password: ${{ secrets.VPS_PASSWORD }}
-            source: "${{env.project}}_${{env.target}}.zip"
+            source: "${{ env.project }}_${{ env.target }}.zip"
             target: "/home/${{ secrets.VPS_USERNAME }}/"
         
 
@@ -103,11 +103,11 @@ jobs:
             password: ${{ secrets.VPS_PASSWORD }}
             script: |
               cd /home/${{ secrets.VPS_USERNAME }}/
-              unzip -o ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
-              rm ${{env.project}}_${{env.target}}.zip
-              cd ${{env.project}}_${{env.target}}
-              mv -f ${{env.project}}_server/* ./
-              rm -rf ${{env.project}}_server
+              unzip -o ${{ env.project }}_${{ env.target }}.zip -d ${{ env.project }}_${{ env.target }}
+              rm ${{ env.project }}_${{ env.target }}.zip
+              cd ${{ env.project }}_${{ env.target }}
+              rsync -a --delete ${{ env.project }}_server/ ./
+              rm -rf ${{ env.project }}_server
               exit
 
         # - name: Send .env ${{env.target}} configuration to VPS
@@ -126,7 +126,7 @@ jobs:
             username: ${{ secrets.VPS_USERNAME }}
             password: ${{ secrets.VPS_PASSWORD }}
             script: |
-              cd /home/${{ secrets.VPS_USERNAME }}/${{env.project}}_${{env.target}}
+              cd /home/${{ secrets.VPS_USERNAME }}/${{ env.project }}_${{ env.target }}
               docker compose up --build --detach
               exit
               
