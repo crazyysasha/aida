@@ -55,38 +55,35 @@ jobs:
           uses: teunmooij/yaml@v1
           with:
             from-file: './${{ env.project }}_server/config/${{ env.target }}.yaml'
-        - name: print data
-          run: |
-            print ${{ steps.read_config.outputs.data }}
-            print ${{ steps.read_passwords.outputs.data }}
+        
         - name: Create .env configuration file
           run: |
             
             echo "TARGET=${{env.target}}" >> ./${{env.project}}_server/.env
             if [[ ${{env.target}} == 'production' ]]; then
-              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.production.database }}" >> ./${{env.project}}_server/.env
+              echo "DATABASE_PASSWORD=${{ toJson(steps.read_passwords.outputs.data).production.database }}" >> ./${{env.project}}_server/.env
             else 
-              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.staging.database }}" >> ./${{env.project}}_server/.env
+              echo "DATABASE_PASSWORD=${{ toJson(steps.read_passwords.outputs.data).staging.database }}" >> ./${{env.project}}_server/.env
             fi
 
-            echo "DATABASE_HOST=${{ steps.read_config.outputs.data.database.host }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_PORT=${{ steps.read_config.outputs.data.database.port }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_NAME=${{ steps.read_config.outputs.data.database.name }}" >> ./${{env.project}}_server/.env
-            echo "DATABASE_USER=${{ steps.read_config.outputs.data.database.user }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_HOST=${{ toJson(steps.read_config.outputs.data).database.host }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_PORT=${{ toJson(steps.read_config.outputs.data).database.port }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_NAME=${{ toJson(steps.read_config.outputs.data).database.name }}" >> ./${{env.project}}_server/.env
+            echo "DATABASE_USER=${{ toJson(steps.read_config.outputs.data).database.user }}" >> ./${{env.project}}_server/.env
             
-            echo "API_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.apiServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "API_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.apiServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).apiServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "API_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).apiServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).insightsServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).insightsServer.publicPort }}" >> ./${{env.project}}_server/.env
 
-            echo "WEB_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.webServer.publicHost }}" >> ./${{env.project}}_server/.env
-            echo "WEB_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.webServer.publicPort }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_HOST=${{ toJson(steps.read_config.outputs.data).webServer.publicHost }}" >> ./${{env.project}}_server/.env
+            echo "WEB_SERVER_PUBLIC_PORT=${{ toJson(steps.read_config.outputs.data).webServer.publicPort }}" >> ./${{env.project}}_server/.env
         
         - name: create zip file 
           uses: montudor/action-zip@v1
           with:
-            args: zip -qq -r ${{env.project}}_server.zip ${{env.project}}_server
+            args: zip -qq -r ${{env.project}}_${{env.target}}.zip ${{env.project}}_server/
           
         - name: Send Docker images to VPS
           uses: appleboy/scp-action@master
@@ -94,7 +91,7 @@ jobs:
             host: ${{ secrets.VPS_HOST }}
             username: ${{ secrets.VPS_USERNAME }}
             password: ${{ secrets.VPS_PASSWORD }}
-            source: "${{env.project}}_server.zip"
+            source: "${{env.project}}_${{env.target}}.zip"
             target: "/home/${{ secrets.VPS_USERNAME }}/"
     
         - name: Load and Restart Docker containers on VPS
@@ -105,8 +102,9 @@ jobs:
             password: ${{ secrets.VPS_PASSWORD }}
             script: |
               cd /home/${{ secrets.VPS_USERNAME }}/
-              unzip ${{env.project}}_server.zip -d ${{env.project}}_server
-              rm ${{env.project}}_server.zip
-              cd ${{env.project}}_server
+              unzip ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
+              rm ${{env.project}}_${{env.target}}.zip
+              cd ${{env.project}}_${{env.target}}
               docker compose --build --detach
+              exit
               
