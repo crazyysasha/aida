@@ -55,7 +55,10 @@ jobs:
           uses: teunmooij/yaml@v1
           with:
             from-file: './${{ env.project }}_server/config/${{ env.target }}.yaml'
-        
+        - name: print data
+          run: |
+            print ${{ steps.read_config.outputs.data }}
+            print ${{ steps.read_passwords.outputs.data }}
         - name: Create .env configuration file
           run: |
             
