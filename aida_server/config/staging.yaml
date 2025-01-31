@@ -12,21 +12,21 @@
 apiServer:
   port: 8080
   publicHost: 10.100.16.220
-  publicPort: 608090
+  publicPort: 68090
   publicScheme: http
 
 # Configuration for the Insights server.
 insightsServer:
   port: 8081
   publicHost: 10.100.16.220
-  publicPort: 608091
+  publicPort: 68091
   publicScheme: http
 
 # Configuration for the web server.
 webServer:
   port: 8082
   publicHost: 10.100.16.220
-  publicPort: 608092
+  publicPort: 68092
   publicScheme: http
 
 # This is the database setup for your servers. The default for the Google Cloud
@@ -35,7 +35,7 @@ webServer:
 # connect on the public IP of the database e.g. database-staging.examplepod.com.
 database:
   host: 10.100.16.220
-  port: 608093
+  port: 68093
   name: serverpod
   user: postgres
   requireSsl: true
@@ -47,4 +47,4 @@ database:
 redis:
   enabled: false
   host: 10.100.16.220
-  port: 608094
+  port: 68094
