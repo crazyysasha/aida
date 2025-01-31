@@ -103,21 +103,21 @@ jobs:
             password: ${{ secrets.VPS_PASSWORD }}
             script: |
               cd /home/${{ secrets.VPS_USERNAME }}/
-              unzip ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
+              unzip -o ${{env.project}}_${{env.target}}.zip -d ${{env.project}}_${{env.target}}
               rm ${{env.project}}_${{env.target}}.zip
               cd ${{env.project}}_${{env.target}}
               mv -f ${{env.project}}_server/* ./
               rm -rf ${{env.project}}_server
               exit
 
-        - name: Send .env ${{env.target}} configuration to VPS
-          uses: appleboy/scp-action@master
-          with:
-            host: ${{ secrets.VPS_HOST }}
-            username: ${{ secrets.VPS_USERNAME }}
-            password: ${{ secrets.VPS_PASSWORD }}
-            source: "./${{env.project}}_server/.env"
-            target: "/home/${{ secrets.VPS_USERNAME }}/${{env.project}}_${{env.target}}/" 
+        # - name: Send .env ${{env.target}} configuration to VPS
+        #   uses: appleboy/scp-action@master
+        #   with:
+        #     host: ${{ secrets.VPS_HOST }}
+        #     username: ${{ secrets.VPS_USERNAME }}
+        #     password: ${{ secrets.VPS_PASSWORD }}
+        #     source: "./${{env.project}}_server/.env"
+        #     target: "/home/${{ secrets.VPS_USERNAME }}/${{env.project}}_${{env.target}}/" 
 
         - name: build docker containers
           uses: appleboy/ssh-action@master
