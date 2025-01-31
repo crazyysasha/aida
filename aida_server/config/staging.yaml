@@ -38,7 +38,7 @@ database:
   port: 18093
   name: serverpod
   user: postgres
-  requireSsl: true
+  requireSsl: false
 
 # This is the setup for Redis. The default for the Google Cloud Engine Terraform
 # configuration is to connect on a private IP address.
