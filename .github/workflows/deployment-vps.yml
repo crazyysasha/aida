@@ -1,0 +1,109 @@
+name: Deploy to VPS
+on:
+  push: 
+    branches: [ main, staging ] # if you want to change main branch, set the your branch name in 3rd action condintion rule
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target'
+        required: true
+        default: ''
+        type: choice
+        options:
+          - 'staging'
+          - 'production'
+env:
+  project: "aida" # Update with your project name
+  target: ${{ github.event.inputs.target  }}
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        
+        - name: Setting target from Input
+          if: ${{ github.event.inputs.target != '' }}
+          run: echo "target=${{ github.event.inputs.target }}" >> $GITHUB_ENV
+  
+        - name: Setting target based on branch
+          if: ${{ github.event.inputs.target == '' }}
+          run: |
+            if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+              echo "target=production" >> $GITHUB_ENV
+            else
+              echo "target=staging" >> $GITHUB_ENV
+            fi
+        
+        - name: Generate passwords
+          uses: timheuer/base64-to-file@v1.2
+          with:
+            fileName: 'passwords.yaml'
+            fileDir: './${{ env.project }}_server/config/'
+            encodedString: ${{ secrets.SERVER_PASSWORDS }}
+        
+        - name: Read passwords
+          id: read_passwords
+          uses: teunmooij/yaml@v1
+          with:
+            from-file: './${{ env.project }}_server/config/passwords.yaml'
+
+        - name: Read ${{env.target}} configuration
+          id: read_config
+          uses: teunmooij/yaml@v1
+          with:
+            from-file: './${{ env.project }}_server/config/${{ env.target }}.yaml'
+        
+        - name: Create .env configuration file
+          run: |
+            echo "TARGET=${{env.target}}" >> .env
+            if [[ ${{env.target}} == 'production' ]]; then
+              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.production.database }}" >> .env
+            else 
+              echo "DATABASE_PASSWORD=${{ steps.read_passwords.outputs.data.staging.database }}" >> .env
+            fi
+
+            echo "DATABASE_HOST=${{ steps.read_config.outputs.data.database.host }}" >> .env
+            echo "DATABASE_PORT=${{ steps.read_config.outputs.data.database.port }}" >> .env
+            echo "DATABASE_NAME=${{ steps.read_config.outputs.data.database.name }}" >> .env
+            echo "DATABASE_USER=${{ steps.read_config.outputs.data.database.user }}" >> .env
+            
+            echo "API_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.apiServer.publicHost }}" >> .env
+            echo "API_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.apiServer.publicPort }}" >> .env
+
+            echo "INSIGHTS_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.insightsServer.publicHost }}" >> .env
+            echo "INSIGHTS_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.insightsServer.publicPort }}" >> .env
+
+            echo "WEB_SERVER_PUBLIC_HOST=${{ steps.read_config.outputs.data.webServer.publicHost }}" >> .env
+            echo "WEB_SERVER_PUBLIC_PORT=${{ steps.read_config.outputs.data.webServer.publicPort }}" >> .env
+        
+        - name: Build Docker images
+          run: |
+            docker-compose -f docker-compose.yaml build
+    
+        - name: Save Docker images as tar
+          run: |
+            docker save -o aida_images.tar $(docker-compose -f docker-compose.yaml config | awk '/image:/ {print $2}')
+    
+        - name: Send Docker images to VPS
+          uses: appleboy/scp-action@master
+          with:
+            host: ${{ secrets.VPS_HOST }}
+            username: ${{ secrets.VPS_USERNAME }}
+            password: ${{ secrets.VPS_PASSWORD }}
+            source: "aida_images.tar, .env, docker-compose.yaml"
+            target: "/home/${{ secrets.VPS_USERNAME }}/aida"
+    
+        - name: Load and Restart Docker containers on VPS
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ secrets.VPS_HOST }}
+            username: ${{ secrets.VPS_USERNAME }}
+            password: ${{ secrets.VPS_PASSWORD }}
+            script: |
+              cd /home/${{ secrets.VPS_USERNAME }}/aida
+              docker load -i aida_images.tar
+              docker-compose down
+              docker-compose up -d
